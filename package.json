@@ -1,0 +1,103 @@
+{
+  "name": "screen-keeper",
+  "version": "1.0.0",
+  "description": "A React-Electron app to keep your computer active and appear online in Teams",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "npm run build:main:dev && concurrently \"npm run start:renderer\" \"wait-on http://localhost:3000 && npm run start:electron\"",
+    "start:renderer": "webpack serve --mode development --config webpack.renderer.js",
+    "start:electron": "electron .",
+    "build:main:dev": "cross-env NODE_ENV=development webpack --mode development --config webpack.main.js",
+    "build": "npm run build:renderer && npm run build:main",
+    "build:renderer": "webpack --mode production --config webpack.renderer.js",
+    "build:main": "webpack --mode production --config webpack.main.js",
+    "pack": "electron-builder",
+    "dist": "npm run build && electron-builder",
+    "rebuild": "electron-rebuild"
+  },
+  "keywords": [
+    "electron",
+    "react",
+    "screen-keeper",
+    "automation"
+  ],
+  "author": "Ahmet YILDIZ",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "@babel/preset-react": "^7.22.0",
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "babel-loader": "^9.1.0",
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "css-loader": "^6.8.0",
+    "electron": "^22.3.27",
+    "electron-builder": "^24.6.0",
+    "electron-rebuild": "^3.2.9",
+    "html-webpack-plugin": "^5.5.0",
+    "node-loader": "^2.0.0",
+    "style-loader": "^3.3.0",
+    "typescript": "^5.2.0",
+    "wait-on": "^7.0.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "webpack-dev-server": "^4.15.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "node-abi": "^4.12.0",
+    "node-cron": "^3.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "robotjs": "^0.6.0"
+  },
+  "build": {
+    "appId": "com.screenkeeper.app",
+    "productName": "Screen Keeper",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "src/assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg",
+      "icon": "src/assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "icon": "src/assets/icon.ico",
+      "artifactName": "${productName} Setup ${version}.${ext}",
+      "publisherName": "Ahmet YILDIZ",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "src/assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Screen Keeper"
+    },
+    "buildDependenciesFromSource": true,
+    "npmRebuild": true
+  }
+}
