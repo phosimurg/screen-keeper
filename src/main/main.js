@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, systemPreferences, shell, Tray, Menu } = require('electron');
 const path = require('path');
-const robot = require('robotjs');
+const { execSync } = require('child_process');
 const cron = require('node-cron');
 const Store = require('electron-store');
 
@@ -56,9 +56,13 @@ const createWindow = () => {
   
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
-    mainWindow.webContents.openDevTools();
+    // DevTools sadece development modunda açılsın
+    if (process.env.NODE_ENV === 'development') {
+      mainWindow.webContents.openDevTools();
+    }
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // Production modunda doğru path kullan
+    mainWindow.loadFile(path.join(__dirname, '../dist/renderer/index.html'));
   }
 
   // Hide to tray instead of closing
@@ -196,22 +200,94 @@ const checkPermissions = async () => {
   return { hasPermission: true };
 };
 
+// Cross-platform automation functions
+const getMousePosition = () => {
+  try {
+    if (process.platform === 'darwin') {
+      // macOS: Use AppleScript to get mouse position
+      const result = execSync(`osascript -e 'tell application "System Events" to return (get position of mouse)'`).toString().trim();
+      const [x, y] = result.split(', ').map(Number);
+      return { x, y };
+    } else if (process.platform === 'win32') {
+      // Windows: Use PowerShell to get cursor position
+      const result = execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms; $p = [System.Windows.Forms.Cursor]::Position; Write-Output \"$($p.X),$($p.Y)\""`).toString().trim();
+      const [x, y] = result.split(',').map(Number);
+      return { x, y };
+    } else {
+      // Linux: Use xdotool
+      const result = execSync('xdotool getmouselocation --shell').toString();
+      const x = parseInt(result.match(/X=(\d+)/)[1]);
+      const y = parseInt(result.match(/Y=(\d+)/)[1]);
+      return { x, y };
+    }
+  } catch (error) {
+    console.error('Error getting mouse position:', error);
+    return { x: 100, y: 100 }; // fallback position
+  }
+};
+
+const moveMouse = (x, y) => {
+  try {
+    if (process.platform === 'darwin') {
+      // macOS: Use AppleScript to move mouse
+      execSync(`osascript -e 'tell application "System Events" to set the position of the mouse to {${x}, ${y}}'`);
+    } else if (process.platform === 'win32') {
+      // Windows: Use PowerShell to move cursor
+      execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${x}, ${y})"`);
+    } else {
+      // Linux: Use xdotool
+      execSync(`xdotool mousemove ${x} ${y}`);
+    }
+  } catch (error) {
+    console.error('Error moving mouse:', error);
+  }
+};
+
+const pressKey = (key) => {
+  try {
+    if (process.platform === 'darwin') {
+      // macOS: Use AppleScript to press key
+      let keyCode = key;
+      if (key === 'space') keyCode = 'space';
+      else if (key === 'ctrl') keyCode = 'control down';
+      else if (key === 'shift') keyCode = 'shift down';
+      
+      execSync(`osascript -e 'tell application "System Events" to key code 49'`); // space key code
+    } else if (process.platform === 'win32') {
+      // Windows: Use PowerShell with SendKeys
+      let keyToSend = key;
+      if (key === 'space') keyToSend = ' ';
+      else if (key === 'ctrl') keyToSend = '^';
+      else if (key === 'shift') keyToSend = '+';
+      
+      execSync(`powershell -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${keyToSend}')"`);
+    } else {
+      // Linux: Use xdotool
+      execSync(`xdotool key ${key}`);
+    }
+  } catch (error) {
+    console.error('Error pressing key:', error);
+  }
+};
+
 const performAction = (actionType, key = null) => {
   try {
     if (actionType === 'mouse') {
-      const currentPos = robot.getMousePos();
+      const currentPos = getMousePosition();
       // Daha belirgin hareket: 10 piksel move et, sonra geri getir
-      robot.moveMouse(currentPos.x + 10, currentPos.y + 10);
+      moveMouse(currentPos.x + 10, currentPos.y + 10);
       // Kısa bir bekleme sonrası geri getir
       setTimeout(() => {
-        robot.moveMouse(currentPos.x, currentPos.y);
+        moveMouse(currentPos.x, currentPos.y);
       }, 100);
     } else if (actionType === 'keyboard' && key) {
-      robot.keyTap(key);
+      pressKey(key);
     }
   } catch (error) {
     console.error('Error performing action:', error);
-    mainWindow.webContents.send('automation-error', error.message);
+    if (mainWindow) {
+      mainWindow.webContents.send('automation-error', error.message);
+    }
   }
 };
 

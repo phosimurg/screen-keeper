@@ -12,10 +12,10 @@ module.exports = {
     __filename: false
   },
   externals: {
-    'robotjs': 'commonjs robotjs',
     'electron': 'commonjs electron',
     'electron-store': 'commonjs electron-store',
-    'node-cron': 'commonjs node-cron'
+    'node-cron': 'commonjs node-cron',
+    'child_process': 'commonjs child_process'
   },
   resolve: {
     extensions: ['.js', '.ts']

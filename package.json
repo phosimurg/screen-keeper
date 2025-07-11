@@ -12,8 +12,11 @@
     "build:renderer": "webpack --mode production --config webpack.renderer.js",
     "build:main": "webpack --mode production --config webpack.main.js",
     "pack": "electron-builder",
-    "dist": "npm run build && electron-builder",
-    "rebuild": "electron-rebuild"
+    "dist": "npm run clean && npm run rebuild && npm run build && electron-builder",
+    "rebuild": "electron-rebuild -f",
+    "clean": "rimraf dist release node_modules/.cache",
+    "postinstall": "electron-builder install-app-deps",
+    "dist:clean": "npm run clean && npm install && npm run dist"
   },
   "keywords": [
     "electron",
@@ -39,6 +42,7 @@
     "electron-rebuild": "^3.2.9",
     "html-webpack-plugin": "^5.5.0",
     "node-loader": "^2.0.0",
+    "rimraf": "^5.0.10",
     "style-loader": "^3.3.0",
     "typescript": "^5.2.0",
     "wait-on": "^7.0.0",
@@ -51,8 +55,7 @@
     "node-abi": "^4.12.0",
     "node-cron": "^3.0.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "robotjs": "^0.6.0"
+    "react-dom": "^18.2.0"
   },
   "build": {
     "appId": "com.screenkeeper.app",
@@ -74,11 +77,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
-        },
-        {
-          "target": "portable",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "src/assets/icon.ico",
@@ -97,7 +98,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Screen Keeper"
     },
-    "buildDependenciesFromSource": true,
-    "npmRebuild": true
+    "buildDependenciesFromSource": false,
+    "npmRebuild": false,
+    "nodeGypRebuild": false
   }
 }

@@ -205,11 +205,6 @@ const App = () => {
   return (
     <div className="app">
       <div className="container">
-        <header className="header">
-          <h1>Screen Keeper</h1>
-          <p>Keep your computer active and appear online</p>
-        </header>
-
         {!hasPermission && (
           <div className="permission-warning">
             <h3>⚠️ Permission Required</h3>
